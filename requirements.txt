@@ -1,0 +1,7 @@
+streamlit==1.38.0
+pandas==2.2.3
+matplotlib==3.9.2
+seaborn==0.13.2
+gdown==5.2.0
+zipfile==0.1.2
+os==0.0.0
