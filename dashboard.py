@@ -23,6 +23,14 @@ def load_data():
     day_df["season"] = day_df["season"].map(season_mapping)
     hour_df["season"] = hour_df["season"].map(season_mapping)
     
+    # Pembersihan data untuk menghindari duplikat atau label yang salah
+    day_df = day_df.drop_duplicates(subset=['dteday', 'season'])
+    hour_df = hour_df.drop_duplicates(subset=['dteday', 'hr', 'season'])
+    
+    # Validasi data musim untuk debugging
+    print("Total penyewaan per musim (setelah mapping dan pembersihan):")
+    print(day_df.groupby('season')['cnt'].sum().reindex(["Fall", "Winter", "Springer", "Summer"]))
+    
     # Mapping kondisi cuaca
     weather_mapping = {1: "Clear", 2: "Cloudy", 3: "Light Rain", 4: "Heavy Rain"}
     day_df["weathersit"] = day_df["weathersit"].map(weather_mapping)
@@ -47,9 +55,11 @@ with tab1:
     
     # Fitur interaktif untuk filter musim
     st.sidebar.header("Filter Data")
+    # Mengatur urutan musim dimulai dari Fall
+    custom_season_order = ["Fall", "Winter", "Springer", "Summer"]
     selected_season = st.sidebar.selectbox(
         "Pilih Musim",
-        options=["All"] + list(day_df['season'].unique())
+        options=["All"] + custom_season_order
     )
     
     # Filter data berdasarkan input pengguna
@@ -58,33 +68,36 @@ with tab1:
     # Boxplot pengaruh musim
     st.subheader("Distribusi Penyewaan Sepeda per Musim")
     fig1, ax1 = plt.subplots(figsize=(10, 6))
-    sns.boxplot(data=filtered_df, x='season', y='cnt', palette='coolwarm', ax=ax1)
+    sns.boxplot(data=filtered_df, x='season', y='cnt', palette='coolwarm', order=custom_season_order if selected_season == "All" else [selected_season], ax=ax1)
     ax1.set_title('Distribusi Penyewaan Sepeda Berdasarkan Musim', fontsize=14)
     ax1.set_xlabel('Musim', fontsize=12)
     ax1.set_ylabel('Jumlah Penyewaan', fontsize=12)
     st.pyplot(fig1)
     
-    # Barplot total penyewaan per musim
+    # Barplot total penyewaan per musim (memperbaiki dengan filtered_df dan urutan kustom)
     st.subheader("Total Penyewaan Sepeda per Musim")
     fig2, ax2 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=filtered_df, x='season', y='cnt', estimator=sum, palette='viridis', ax=ax2)
+    sns.barplot(data=filtered_df, x='season', y='cnt', estimator=sum, palette='viridis', order=custom_season_order if selected_season == "All" else [selected_season], ax=ax2)
     ax2.set_title('Total Jumlah Penyewaan Sepeda Berdasarkan Musim', fontsize=14)
     ax2.set_xlabel('Musim', fontsize=12)
     ax2.set_ylabel('Total Penyewaan', fontsize=12)
-    # Mengatur skala sumbu Y agar angka lebih jelas (dalam ribuan)
-    ax2.set_ylim(0, filtered_df.groupby('season')['cnt'].sum().max() * 1.2)  # Tambah padding 20%
-    ax2.set_yticks(range(0, int(filtered_df.groupby('season')['cnt'].sum().max()) + 100000, 100000))  # Set interval 100,000
-    ax2.set_yticklabels([f'{x:,}'.format(x=x) for x in range(0, int(filtered_df.groupby('season')['cnt'].sum().max()) + 100000, 100000)])
+    # Mengatur skala sumbu Y berdasarkan filtered_df
+    max_total = filtered_df.groupby('season')['cnt'].sum().max() if not filtered_df.empty else day_df.groupby('season')['cnt'].sum().max()
+    ax2.set_ylim(0, max_total * 1.2)  # Tambah padding 20%
+    ax2.set_yticks(range(0, int(max_total) + 100000, 100000))  # Set interval 100,000
+    ax2.set_yticklabels([f'{x:,}'.format(x=x) for x in range(0, int(max_total) + 100000, 100000)])
     
-    # Menambahkan label nilai di atas setiap bar
-    for i, v in enumerate(filtered_df.groupby('season')['cnt'].sum()):
-        ax2.text(i, v + 10000, f'{v:,}', color='black', ha="center", fontsize=10)
+    # Menambahkan label nilai di atas setiap bar berdasarkan filtered_df
+    if not filtered_df.empty:
+        season_totals = filtered_df.groupby('season')['cnt'].sum().reindex(custom_season_order if selected_season == "All" else [selected_season])
+        for i, v in enumerate(season_totals):
+            ax2.text(i, v + 10000, f'{v:,}', color='black', ha="center", fontsize=10)
     
     st.pyplot(fig2)
     
     # Statistik deskriptif per musim
     st.subheader("Statistik Penyewaan per Musim")
-    season_stats = filtered_df.groupby('season')['cnt'].agg(['mean', 'median', 'min', 'max']).reset_index()
+    season_stats = filtered_df.groupby('season')['cnt'].agg(['mean', 'median', 'min', 'max']).reindex(custom_season_order if selected_season == "All" else [selected_season]).reset_index()
     st.dataframe(season_stats.style.format("{:.2f}", subset=['mean', 'median', 'min', 'max']))
 
     # Insight
@@ -162,8 +175,8 @@ with tab3:
     st.header("Kesimpulan Analisis")
     st.markdown("""
     ### 1. Pengaruh Musim terhadap Penyewaan Sepeda
-    - **Musim Gugur** menunjukkan jumlah penyewaan tertinggi, kemungkinan karena cuaca yang hangat dan nyaman untuk bersepeda.
-    - **Musim Semi** memiliki penyewaan terendah, dipengaruhi oleh suhu yang masih dingin dan kondisi cuaca yang kurang mendukung.
+    - **Musim Fall** menunjukkan jumlah penyewaan tertinggi, kemungkinan karena cuaca yang hangat dan nyaman untuk bersepeda.
+    - **Musim Springer** memiliki penyewaan terendah, dipengaruhi oleh suhu dingin dan kondisi cuaca yang kurang mendukung.
     - Implikasi: Strategi pemasaran dapat difokuskan pada musim Fall untuk meningkatkan penyewaan.
 
     ### 2. Pola Penyewaan Sepeda pada Hari Kerja
