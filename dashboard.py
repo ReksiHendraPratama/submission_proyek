@@ -50,7 +50,7 @@ with tab1:
     
     # Fitur interaktif untuk filter musim
     st.sidebar.header("Filter Data")
-    custom_season_order = ["Fall", "Winter", "Spring", "Summer"]
+    custom_season_order = ["Fall", "Spring", "Summer", "Winter"]
     selected_season = st.sidebar.selectbox(
         "Pilih Musim",
         options=["All"] + custom_season_order
