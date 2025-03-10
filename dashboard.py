@@ -62,23 +62,34 @@ with tab1:
     # Boxplot pengaruh musim
     st.subheader("Distribusi Penyewaan Sepeda per Musim")
     fig1, ax1 = plt.subplots(figsize=(12, 5))
-    sns.boxplot(data=filtered_df, x='season', y='cnt', palette='coolwarm', order=custom_season_order if selected_season == "All" else [selected_season], ax=ax1)
+    sns.boxplot(data=filtered_df, x='season', y='cnt', palette='coolwarm',
+                order=custom_season_order if selected_season == "All" else [selected_season], ax=ax1)
     ax1.set_title('Distribusi Jumlah Penyewaan Sepeda Berdasarkan Musim', fontsize=14)
     ax1.set_xlabel('Musim', fontsize=12)
     ax1.set_ylabel('Jumlah Penyewa', fontsize=12)
     st.pyplot(fig1)
-    
+
     # Barplot total penyewaan per musim
     st.subheader("Total Penyewaan Sepeda per Musim")
     fig2, ax2 = plt.subplots(figsize=(12, 5))
-    ax2 = sns.barplot(x='season', y='cnt', data=filtered_df, estimator=sum, palette='viridis', order=custom_season_order if selected_season == "All" else [selected_season], ax=ax2)
+    ax2 = sns.barplot(x='season', y='cnt', data=filtered_df, estimator=sum, palette='viridis',
+                    order=custom_season_order if selected_season == "All" else [selected_season], ax=ax2)
+
+    # Menghitung total penyewaan per musim
     totals = filtered_df.groupby('season', sort=False)['cnt'].sum().reindex(custom_season_order if selected_season == "All" else [selected_season])
+    max_total = totals.max()  # Ambil nilai total terbesar
+    ax2.set_ylim(0, max_total * 1.1)  # Tambahkan margin atas 10%
+
+    # Menambahkan label nilai di atas setiap bar dengan jarak 10% dari max_total
     for i, total in enumerate(totals):
-        ax2.text(i, total + 150_000, f'{total:,.0f}', color='black', ha="center", fontsize=10, weight='bold', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        ax2.text(i, total + (max_total * 0.05), f'{total:,.0f}', color='black', ha="center", fontsize=10, weight='bold',
+                bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+
     ax2.set_title('Total Jumlah Penyewaan Sepeda Berdasarkan Musim', fontsize=14)
     ax2.set_xlabel('Musim', fontsize=12)
     ax2.set_ylabel('Total Penyewa', fontsize=12)
     st.pyplot(fig2)
+
     
     # Statistik deskriptif per musim
     st.subheader("Statistik Penyewaan per Musim")
