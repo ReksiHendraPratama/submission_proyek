@@ -90,7 +90,6 @@ with tab1:
     ax2.set_ylabel('Total Penyewa', fontsize=12)
     st.pyplot(fig2)
 
-    
     # Statistik deskriptif per musim
     st.subheader("Statistik Penyewaan per Musim")
     season_stats = filtered_df.groupby('season')['cnt'].agg(['mean', 'median', 'min', 'max']).reindex(custom_season_order if selected_season == "All" else [selected_season]).reset_index()
@@ -112,7 +111,7 @@ with tab2:
     # Filter hanya hari kerja (menggunakan workingday == 1)
     weekdays_df = hour_df[hour_df['workingday'] == 1]
     
-    # Fitur interaktif untuk filter rentang jam dan musim
+    # Fitur interaktif untuk filter rentang jam
     st.sidebar.header("Filter Data (Pola Weekdays)")
     min_hour, max_hour = st.sidebar.slider(
         "Pilih Rentang Jam",
@@ -120,15 +119,9 @@ with tab2:
         max_value=int(weekdays_df['hr'].max()),
         value=(int(weekdays_df['hr'].min()), int(weekdays_df['hr'].max()))
     )
-    selected_weekday_season = st.sidebar.selectbox(
-        "Pilih Musim untuk Weekdays",
-        options=["All"] + list(weekdays_df['season'].unique())
-    )
     
-    # Filter data berdasarkan input pengguna
+    # Filter data berdasarkan input pengguna (hanya rentang jam)
     filtered_weekdays_df = weekdays_df[(weekdays_df['hr'] >= min_hour) & (weekdays_df['hr'] <= max_hour)]
-    if selected_weekday_season != "All":
-        filtered_weekdays_df = filtered_weekdays_df[filtered_weekdays_df['season'] == selected_weekday_season]
     
     # Lineplot pola penyewaan sepeda per jam dalam sehari
     st.subheader("Tren Penyewaan Sepeda di Weekdays Berdasarkan Jam")
